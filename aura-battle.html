@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AURA BATTLE</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Permanent+Marker&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+  :root{
+    --p1:#00f3ff; --p2:#ff2ec4; --gold:#ffd23f; --danger:#ff4444; --xp:#8a5bff;
+    --bg:#05050a; --panel:#0d0d16;
+  }
+  *{box-sizing:border-box;}
+  body,html{margin:0;padding:0;width:100%;height:100%;background:var(--bg);color:#fff;
+    font-family:'Orbitron',sans-serif;overflow:hidden;}
+
+  .screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:900;text-align:center;}
+  .screen.show{display:flex;}
+  #menu{background:radial-gradient(circle at 50% 30%,#141425,#000 70%);z-index:1000;}
+  #menu h1{font-size:3rem;margin:0;letter-spacing:4px;color:var(--p1);text-shadow:0 0 25px var(--p1);}
+  #menu p.sub{color:var(--p2);letter-spacing:6px;margin:8px 0 30px;font-size:.8rem;}
+  .btn{padding:14px 28px;font-family:'Orbitron';font-weight:700;background:transparent;color:#fff;
+    border:2px solid var(--p1);border-radius:6px;cursor:pointer;margin:8px;letter-spacing:1px;transition:.25s;}
+  .btn:hover{background:var(--p1);color:#000;box-shadow:0 0 20px var(--p1);}
+  .btn.p2b{border-color:var(--p2);}
+  .btn.p2b:hover{background:var(--p2);box-shadow:0 0 20px var(--p2);}
+  .btn.small{padding:8px 16px;font-size:.75rem;}
+  .hint{color:#666;font-size:.65rem;margin-top:20px;max-width:360px;line-height:1.5;}
+  .panel-box{background:#0d0d16;border:1px solid #333;border-radius:10px;padding:20px 26px;margin-top:14px;min-width:280px;}
+  .menu-section{display:flex;flex-direction:column;align-items:center;margin-top:16px;padding-top:16px;border-top:1px solid #1c1c26;width:100%;max-width:380px;}
+  .menu-section:first-of-type{border-top:none;margin-top:8px;padding-top:0;}
+  .menu-section-title{font-size:.62rem;letter-spacing:3px;color:#666;margin-bottom:10px;}
+  .mute-btn{position:fixed;top:14px;right:14px;z-index:1100;padding:8px 12px;}
+  #rules .panel-box{max-width:560px;width:90vw;max-height:64vh;overflow-y:auto;text-align:left;}
+  #rules h3{color:var(--gold);margin:14px 0 6px;font-size:.85rem;letter-spacing:1px;}
+  #rules h3:first-child{margin-top:0;}
+  #rules p{font-size:.75rem;line-height:1.55;color:#ccc;margin:0 0 4px;}
+  .rule-card-row{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #1c1c26;padding:7px 0;font-size:.72rem;align-items:center;}
+  .rule-card-row .rc-title{color:var(--gold);font-family:'Permanent Marker';min-width:110px;}
+  .rule-card-row .rc-desc{color:#aaa;flex:1;}
+  .rule-card-row .rc-cost{color:var(--p1);font-weight:900;white-space:nowrap;}
+  #room-code-display{font-family:'Permanent Marker';font-size:2.2rem;color:var(--gold);letter-spacing:6px;margin:10px 0;}
+  #join-code-input{background:#111;border:1px solid #444;color:#fff;padding:10px 12px;border-radius:6px;
+    font-family:'Orbitron';font-size:1rem;letter-spacing:3px;text-align:center;width:160px;text-transform:uppercase;}
+
+  #game{display:none;height:100vh;flex-direction:column;justify-content:space-between;align-items:center;
+    background:linear-gradient(to bottom,#0a0a1a,#050508,#1a0a14);}
+
+  .hand{display:flex;gap:8px;padding:10px;min-height:150px;width:100%;justify-content:center;align-items:center;flex-wrap:wrap;}
+  #p2-area{transform:rotate(180deg);}
+
+  .card{width:100px;height:140px;background:#111;border:2px solid #333;border-radius:10px;padding:8px;
+    display:flex;flex-direction:column;cursor:pointer;position:relative;transition:.2s;font-size:.72rem;}
+  .card:hover{transform:translateY(-12px) scale(1.08);z-index:10;border-color:#fff;}
+  .card-title{font-family:'Permanent Marker';color:var(--gold);margin-bottom:4px;font-size:.85rem;}
+  .card-effect{color:#aaa;font-size:.58rem;line-height:1.15;flex:1;}
+  .card-cost{position:absolute;bottom:6px;right:6px;font-weight:900;color:var(--p1);}
+  .p1-card{border-color:var(--p1);}
+  .p2-card{border-color:var(--p2);}
+  .special-style{border:3px solid var(--gold)!important;background:linear-gradient(45deg,#221900,#000);box-shadow:0 0 15px var(--gold);}
+  .card-back{width:100px;height:140px;background:repeating-linear-gradient(45deg,#111,#111 10px,#1c1c1c 10px,#1c1c1c 20px);border:2px solid #333;border-radius:10px;}
+  .card.unaffordable{opacity:.35;cursor:not-allowed;pointer-events:none;}
+
+  .side-panel{width:320px;display:flex;flex-direction:column;gap:4px;}
+  .bar-bg{width:100%;height:12px;background:#1a1a24;border-radius:8px;border:1px solid #333;overflow:hidden;}
+  .xp-fill{height:100%;background:var(--xp);width:0%;transition:.4s;}
+  .label{font-size:.62rem;letter-spacing:1px;display:flex;justify-content:space-between;}
+  .stat-chip{display:flex;align-items:center;justify-content:center;gap:8px;background:#111;border:1px solid #333;
+    border-radius:8px;padding:6px 10px;font-family:'Permanent Marker';font-size:1.15rem;transition:.3s;}
+  .stat-chip .stat-tag{font-family:'Orbitron';font-size:.55rem;letter-spacing:2px;color:#888;}
+  .stat-chip.st-high{color:#5cff7a;}
+  .stat-chip.st-mid{color:var(--gold);}
+  .stat-chip.st-low{color:var(--danger);text-shadow:0 0 10px var(--danger);}
+  .farm-fill{height:100%;background:var(--gold);width:0%;transition:.4s;}
+
+  /* ---- TABLERO ---- */
+  #board{display:flex;align-items:center;justify-content:center;gap:26px;padding:8px 10px;flex-wrap:wrap;}
+  .aura-col{display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .aura-title{font-family:'Permanent Marker';font-size:1.4rem;color:var(--gold);text-shadow:0 0 12px var(--gold);letter-spacing:3px;}
+  .aura-orb{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-weight:900;font-size:1rem;background:radial-gradient(circle at 35% 30%,#1a1a2a,#000);border:2px solid #444;}
+  .aura-orb.p1o{border-color:var(--p1);color:var(--p1);box-shadow:0 0 12px rgba(0,243,255,.4);}
+  .aura-orb.p2o{border-color:var(--p2);color:var(--p2);box-shadow:0 0 12px rgba(255,46,196,.4);}
+
+  .deck-pile{width:78px;height:108px;border-radius:8px;cursor:pointer;position:relative;
+    background:repeating-linear-gradient(45deg,#141420,#141420 8px,#1e1e2e 8px,#1e1e2e 16px);
+    border:2px solid var(--gold);display:flex;flex-direction:column;align-items:center;justify-content:center;
+    box-shadow:0 0 14px rgba(255,210,63,.25);}
+  .deck-pile:hover{transform:translateY(-4px);}
+  .deck-pile .deck-label{font-size:.6rem;letter-spacing:1px;color:var(--gold);margin-top:4px;text-align:center;}
+  .deck-pile #deck-count{font-family:'Permanent Marker';font-size:1.3rem;color:#fff;}
+
+  .timer-col{display:flex;flex-direction:column;align-items:center;gap:4px;}
+  #timer-num{font-family:'Permanent Marker';font-size:2rem;width:56px;height:56px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;border:3px solid var(--p1);}
+  #timer-num.low{border-color:var(--danger);color:var(--danger);animation:tpulse .4s infinite alternate;}
+  @keyframes tpulse{from{transform:scale(1);}to{transform:scale(1.15);}}
+  .timer-label{font-size:.55rem;color:#888;letter-spacing:1px;}
+
+  #center{display:flex;flex-direction:column;align-items:center;gap:8px;padding:4px;}
+  #turn-display{font-weight:900;font-size:1.05rem;letter-spacing:2px;}
+  .mini-btn{padding:7px 14px;font-size:.68rem;}
+
+  #chat-row{display:flex;gap:6px;align-items:center;}
+  #chat-input{background:#111;border:1px solid #444;color:#fff;padding:6px 8px;border-radius:6px;
+    font-family:'Orbitron';font-size:.65rem;width:190px;}
+  #chat-input:focus{outline:none;border-color:var(--p1);}
+  #chat-hint{color:#555;font-size:.52rem;}
+
+  #announcer{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:4.2rem;
+    font-family:'Permanent Marker';pointer-events:none;opacity:0;z-index:2000;transition:.2s;text-shadow:0 0 30px red;}
+
+  /* ---- STICKMAN DE IMPACTO AL JUGAR CARTA ---- */
+  #play-fx{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:150px;height:180px;
+    pointer-events:none;opacity:0;z-index:1500;transition:opacity .25s;}
+  #play-fx.show{opacity:1;}
+  #play-fx svg{width:100%;height:100%;overflow:visible;}
+  #play-fx .fx-label{font-family:'Permanent Marker';font-size:1.3rem;text-align:center;margin-top:2px;
+    text-shadow:0 0 12px currentColor;animation:pulseText .45s ease-in-out infinite alternate;}
+
+  #sixseven-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:3000;
+    display:none;align-items:center;justify-content:center;flex-direction:column;}
+  #sixseven-overlay.show{display:flex;}
+  #sixseven-text{font-family:'Permanent Marker';font-size:5rem;color:var(--gold);
+    text-shadow:0 0 30px var(--gold);letter-spacing:6px;margin-top:10px;
+    animation:pulseText .5s ease-in-out infinite alternate;}
+  @keyframes pulseText{from{transform:scale(1);}to{transform:scale(1.12);}}
+  .stickman{width:220px;height:280px;position:relative;}
+  .stickman svg{width:100%;height:100%;overflow:visible;}
+  .arm-l{transform-origin:120px 95px;animation:armSwing 0.5s ease-in-out infinite alternate;}
+  .arm-r{transform-origin:120px 95px;animation:armSwing 0.5s ease-in-out infinite alternate;}
+  @keyframes armSwing{from{transform:rotate(-45deg);}to{transform:rotate(45deg);}}
+  .head{animation:headBob 0.5s ease-in-out infinite alternate;transform-origin:120px 70px;}
+  @keyframes headBob{from{transform:translateY(0) rotate(-4deg);}to{transform:translateY(-4px) rotate(4deg);}}
+  #sixseven-close{margin-top:26px;}
+
+  /* ---- ANIMACIONES RANDOM DEL STICKMAN ---- */
+  @keyframes danceBounce{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-45px) rotate(0deg);}}
+  @keyframes danceSpin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+  @keyframes danceShake{0%,100%{transform:translateX(0) rotate(0deg);}25%{transform:translateX(-18px) rotate(-6deg);}75%{transform:translateX(18px) rotate(6deg);}}
+  @keyframes danceTilt{0%,100%{transform:rotate(-12deg);}50%{transform:rotate(12deg);}}
+  @keyframes danceWobble{0%,100%{transform:scale(1) rotate(0deg);}33%{transform:scale(1.15) rotate(-8deg);}66%{transform:scale(0.9) rotate(8deg);}}
+  /* Bailan unas vueltas y quedan quietos (con forwards) en vez de girar/rebotar para siempre. */
+  .stickman.anim-bounce{animation:danceBounce .5s ease-in-out 3 forwards;}
+  .stickman.anim-spin{animation:danceSpin .8s linear 2 forwards;}
+  .stickman.anim-shake{animation:danceShake .35s ease-in-out 4 forwards;}
+  .stickman.anim-tilt{animation:danceTilt .45s ease-in-out 3 forwards;}
+  .stickman.anim-wobble{animation:danceWobble .6s ease-in-out 3 forwards;}
+
+  /* ---- POSES TEMÁTICAS POR CARTA (estilo meme) ---- */
+  @keyframes posePop{0%{transform:translate(-50%,-50%) scale(.4);}60%{transform:translate(-50%,-50%) scale(1.18);}100%{transform:translate(-50%,-50%) scale(1);}}
+  #play-fx.pose-pop{animation:posePop .35s ease-out;}
+  /* Además del "pop" de entrada, cada pose sigue bailando en loop mientras está en pantalla,
+     tipo meme de tiktok, en vez de quedarse quieta. Estas keyframes son propias del FX
+     (no las del stickman del sixseven) porque incluyen el translate(-50%,-50%) de centrado;
+     si usaran las del stickman, el dibujo "saltaba" de lugar al arrancar el baile. */
+  /* Festejos de gol para el FX de carta (independientes de las del sixseven, que no se tocan). */
+  @keyframes fxBounce{0%,100%{transform:translate(-50%,-50%) translateY(0) rotate(0deg);}35%{transform:translate(-50%,-50%) translateY(-28px) rotate(-6deg);}60%{transform:translate(-50%,-50%) translateY(-6px) rotate(6deg);}}
+  @keyframes fxShake{0%,100%{transform:translate(-50%,-50%) translateX(0) translateY(0) rotate(0deg);}25%{transform:translate(-50%,-50%) translateX(-12px) translateY(-4px) rotate(-6deg);}75%{transform:translate(-50%,-50%) translateX(12px) translateY(-4px) rotate(6deg);}}
+  @keyframes fxTilt{0%,100%{transform:translate(-50%,-50%) rotate(-16deg) translateX(-6px);}50%{transform:translate(-50%,-50%) rotate(16deg) translateX(6px);}}
+  @keyframes fxWobble{0%,100%{transform:translate(-50%,-50%) scale(1) rotate(0deg);}50%{transform:translate(-50%,-50%) scale(1.08) rotate(4deg);}}
+  #play-fx.meme-bounce{animation:posePop .35s ease-out, fxBounce .5s ease-in-out .35s infinite;}
+  #play-fx.meme-shake{animation:posePop .35s ease-out, fxShake .3s ease-in-out .35s infinite;}
+  #play-fx.meme-tilt{animation:posePop .35s ease-out, fxTilt .4s ease-in-out .35s infinite;}
+  #play-fx.meme-wobble{animation:posePop .35s ease-out, fxWobble .55s ease-in-out .35s infinite;}
+  @keyframes jawPulse{0%,100%{stroke-width:3;}50%{stroke-width:6;}}
+  .jaw{animation:jawPulse .5s ease-in-out infinite;}
+  @keyframes jawTouch{0%,100%{transform:rotate(0deg);}50%{transform:rotate(9deg);}}
+  .jaw-touch-arm{transform-origin:120px 92px;animation:jawTouch .55s ease-in-out infinite;}
+  @keyframes waveArm{0%,100%{transform:rotate(0deg);}50%{transform:rotate(-30deg);}}
+  .wave-arm{transform-origin:120px 92px;animation:waveArm .45s ease-in-out infinite;}
+  @keyframes heartPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.3);}}
+  .heart-pulse{transform-origin:120px 80px;animation:heartPulse .5s ease-in-out infinite;}
+  @keyframes jabPunch{0%,100%{transform:translateX(0);}50%{transform:translateX(28px);}}
+  .jab-arm{transform-origin:120px 90px;animation:jabPunch .28s ease-in-out infinite;}
+  @keyframes auraPulse{0%,100%{opacity:.35;transform:scale(.9);}50%{opacity:1;transform:scale(1.18);}}
+  .aura-rays{transform-origin:120px 55px;animation:auraPulse .45s ease-in-out infinite;}
+  .aura-ring{transform-origin:120px 55px;animation:auraPulse .6s ease-in-out infinite;}
+  @keyframes flexShake{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
+  #play-fx .flex-body{transform-origin:120px 150px;animation:flexShake .35s ease-in-out infinite;}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     AUDIO: poné tus propios archivos en una carpeta "sounds/" al
+     lado de este HTML, con estos nombres (o cambiá el "src" de
+     cada <audio> por el que quieras usar). Formatos: mp3, ogg o wav.
+     ============================================================ -->
+<audio id="sfx-card" src="sounds/card.mp3" preload="auto"></audio>
+<audio id="sfx-damage" src="sounds/damage.mp3" preload="auto"></audio>
+<audio id="sfx-heal" src="sounds/heal.mp3" preload="auto"></audio>
+<audio id="sfx-combo" src="sounds/combo.mp3" preload="auto"></audio>
+<audio id="sfx-ultra" src="sounds/ultra.mp3" preload="auto"></audio>
+<audio id="sfx-draw" src="sounds/draw.mp3" preload="auto"></audio>
+<audio id="sfx-pass" src="sounds/pass.mp3" preload="auto"></audio>
+<audio id="sfx-click" src="sounds/click.mp3" preload="auto"></audio>
+<audio id="sfx-sixseven" src="sounds/sixseven.mp3" preload="auto"></audio>
+<audio id="sfx-win" src="sounds/win.mp3" preload="auto"></audio>
+<audio id="sfx-lose" src="sounds/lose.mp3" preload="auto"></audio>
+<audio id="sfx-draw-game" src="sounds/draw-game.mp3" preload="auto"></audio>
+<audio id="sfx-mogged" src="sounds/mogged.mp3" preload="auto"></audio>
+<audio id="sfx-papoi" src="sounds/papoi.mp3" preload="auto"></audio>
+<audio id="sfx-byebye" src="sounds/byebye.mp3" preload="auto"></audio>
+<audio id="bg-music" src="sounds/music.mp3" preload="auto" loop></audio>
+
+<div id="announcer">MOGGED!</div>
+
+<div id="play-fx">
+  <svg viewBox="0 0 240 280">
+    <circle class="head" cx="120" cy="55" r="20" fill="none" stroke="currentColor" stroke-width="4"/>
+    <line x1="120" y1="75" x2="120" y2="165" stroke="currentColor" stroke-width="4"/>
+    <g class="arm-l"><line x1="120" y1="92" x2="65" y2="92" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></g>
+    <g class="arm-r"><line x1="120" y1="92" x2="175" y2="92" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></g>
+    <line x1="120" y1="165" x2="92" y2="240" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+    <line x1="120" y1="165" x2="148" y2="240" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+  </svg>
+  <div class="fx-label"></div>
+</div>
+
+<div id="sixseven-overlay">
+  <div class="stickman">
+    <svg viewBox="0 0 240 280">
+      <circle class="head" cx="120" cy="55" r="22" fill="none" stroke="#fff" stroke-width="4"/>
+      <line x1="120" y1="77" x2="120" y2="170" stroke="#fff" stroke-width="4"/>
+      <g class="arm-l"><line x1="120" y1="95" x2="60" y2="95" stroke="var(--p1)" stroke-width="5" stroke-linecap="round"/><circle cx="60" cy="95" r="7" fill="var(--p1)"/></g>
+      <g class="arm-r"><line x1="120" y1="95" x2="180" y2="95" stroke="var(--p2)" stroke-width="5" stroke-linecap="round"/><circle cx="180" cy="95" r="7" fill="var(--p2)"/></g>
+      <line x1="120" y1="170" x2="90" y2="250" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+      <line x1="120" y1="170" x2="150" y2="250" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div id="sixseven-text">6 7</div>
+  <button class="btn" id="sixseven-close">CERRAR</button>
+</div>
+
+<!-- MENU -->
+<div id="menu" class="screen show">
+  <button class="btn small mute-btn" onclick="toggleMute()" title="Sonido">🔊</button>
+  <h1>AURA BATTLE</h1>
+  <p class="sub">EL JUEGO ARGENTINO CON MAS AURA</p>
+
+  <div class="menu-section">
+    <div class="menu-section-title">MODO DE JUEGO</div>
+    <button class="btn" onclick="startSolo()">🤖 JUGAR SOLO (VS IA)</button>
+    <button class="btn" onclick="startLocal()">🖥️ JUGAR LOCAL (1 PANTALLA)</button>
+  </div>
+
+  <div class="menu-section">
+    <div class="menu-section-title">MULTIJUGADOR ONLINE</div>
+    <button class="btn p2b" onclick="showPanel('host')">🌐 CREAR SALA ONLINE</button>
+    <button class="btn p2b" onclick="showPanel('join')">🔑 UNIRSE A SALA</button>
+
+    <div id="host-panel" class="panel-box" style="display:none;">
+      <div class="label">Compartile este código a tu rival:</div>
+      <div id="room-code-display">----</div>
+      <div id="host-status" style="font-size:.65rem;color:#888;">generando sala...</div>
+    </div>
+
+    <div id="join-panel" class="panel-box" style="display:none;">
+      <div class="label" style="margin-bottom:8px;">Ingresá el código de la sala:</div>
+      <input id="join-code-input" maxlength="4" placeholder="AB12">
+      <br>
+      <button class="btn small" style="margin-top:10px;" onclick="joinRoom()">CONECTAR</button>
+      <div id="join-status" style="font-size:.65rem;color:#888;margin-top:6px;"></div>
+    </div>
+
+    <div class="hint">Online usa conexión directa entre navegadores (WebRTC vía PeerJS), sin servidor propio.
+      Puede fallar en redes corporativas/muy restrictivas — si no conecta, probá con datos móviles o Wi-Fi hogareño.</div>
+  </div>
+
+  <div class="menu-section">
+    <button class="btn small" onclick="showScreen('rules')">📖 REGLAS DEL JUEGO</button>
+  </div>
+</div>
+
+<!-- REGLAS -->
+<div id="rules" class="screen">
+  <button class="btn small mute-btn" onclick="toggleMute()" title="Sonido">🔊</button>
+  <h1 style="font-size:1.9rem;">REGLAS DEL JUEGO</h1>
+  <div class="panel-box">
+    <h3>🎯 Objetivo</h3>
+    <p>Ganás si el Aura del rival llega a 0 (K.O.), si sos el primero en juntar 500 de Aura acumulada, si llegás antes a 300 XP, o si el rival se queda sin cartas (mano y mazo vacíos).</p>
+    <h3>⚡ Aura</h3>
+    <p>El Aura ahora es a la vez tu energía para jugar cartas Y tu vida: si llega a 0, quedás K.O. Empezás con 60 y ganás +18 por turno (hasta un máximo de 400). Robar una carta del mazo cuesta 20 de Aura.</p>
+    <h3>📈 Aura acumulada</h3>
+    <p>Aparte, cada punto de Aura que generás con tus cartas se suma a tu "Aura acumulada", un contador que nunca baja. El primero en llegar a 500 gana la partida, aunque su Aura actual esté baja.</p>
+    <h3>🃏 Cartas</h3>
+    <div id="rules-cards"></div>
+    <h3>⏱️ Turnos</h3>
+    <p>Tenés 15 segundos por turno para jugar una carta, robar o pasar. Si se acaba el tiempo, el turno pasa solo.</p>
+    <h3>🔥 Combo</h3>
+    <p>Si jugás SIX y en tu siguiente jugada seguís con SEVEN, se activa el combo especial "6 7".</p>
+    <h3>🎮 Modos</h3>
+    <p>Solo (vs IA), Local (1 pantalla para 2 jugadores) y Online (sala P2P con código de 4 caracteres, sin servidor propio).</p>
+  </div>
+  <button class="btn" style="margin-top:16px;" onclick="showScreen('menu')">VOLVER</button>
+</div>
+
+<!-- GAME -->
+<div id="game">
+  <button class="btn small mute-btn" onclick="toggleMute()" title="Sonido">🔊</button>
+  <div id="p2-area">
+    <div id="p2-hand" class="hand"></div>
+    <div class="side-panel" style="margin:auto;">
+      <div class="label" style="color:var(--p2);"><span id="p2-hp-label">P2</span></div>
+      <div class="stat-chip" id="p2-hp-chip"><span class="stat-tag">AURA</span><span id="p2-hp-val">60</span></div>
+      <div class="bar-bg" style="height:7px;"><div id="p2-farm-bar" class="farm-fill"></div></div>
+      <div class="label" style="color:var(--gold);"><span id="p2-farm-val">60/500 AURA ACUM.</span></div>
+      <div class="bar-bg" style="height:7px;"><div id="p2-xp-bar" class="xp-fill"></div></div>
+      <div class="label" style="color:#8a5bff;"><span id="p2-xp-val">0/300 XP</span></div>
+    </div>
+  </div>
+
+  <div id="board">
+    <div class="aura-col">
+      <div class="aura-title">AURA</div>
+      <div class="aura-orb p1o"><span id="p1-orb-label">P1</span><br><span id="p1-aura-val">60</span></div>
+      <div class="aura-orb p2o"><span id="p2-orb-label">P2</span><br><span id="p2-aura-val">60</span></div>
+    </div>
+    <div class="deck-pile" onclick="requestDraw()">
+      <div class="deck-label">MAZO<br><span id="deck-count">0</span></div>
+    </div>
+    <div class="timer-col">
+      <div id="timer-num">15</div>
+      <div class="timer-label">seg. para jugar</div>
+    </div>
+  </div>
+
+  <div id="center">
+    <div id="turn-display">TURNO P1</div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn mini-btn" style="border-color:#555;" onclick="requestPass()">PASAR</button>
+    </div>
+    <div id="chat-row">
+      <input id="chat-input" type="text" placeholder="Decí algo..." maxlength="40">
+      <button class="btn mini-btn" onclick="sendChat()">ENVIAR</button>
+    </div>
+    <div id="chat-hint">psst... probá escribir "sixseven"</div>
+  </div>
+
+  <div id="p1-area">
+    <div class="side-panel" style="margin:auto;">
+      <div class="label" style="color:#8a5bff;"><span id="p1-xp-val">0/300 XP</span></div>
+      <div class="bar-bg" style="height:7px;"><div id="p1-xp-bar" class="xp-fill"></div></div>
+      <div class="label" style="color:var(--gold);"><span id="p1-farm-val">60/500 AURA ACUM.</span></div>
+      <div class="bar-bg" style="height:7px;"><div id="p1-farm-bar" class="farm-fill"></div></div>
+      <div class="stat-chip" id="p1-hp-chip"><span class="stat-tag">AURA</span><span id="p1-hp-val">60</span></div>
+      <div class="label" style="color:var(--p1);"><span id="p1-hp-label">P1</span></div>
+    </div>
+    <div id="p1-hand" class="hand"></div>
+  </div>
+</div>
+
+<script>
+/* ================= AUDIO (archivos propios, ver los <audio> arriba del <body>) ================= */
+let audioMuted = false;
+const SFX_IDS = {
+  card:'sfx-card', damage:'sfx-damage', heal:'sfx-heal', combo:'sfx-combo',
+  ultra:'sfx-ultra', draw:'sfx-draw', pass:'sfx-pass', click:'sfx-click',
+  sixseven:'sfx-sixseven', win:'sfx-win', lose:'sfx-lose', 'draw-game':'sfx-draw-game',
+  mogged:'sfx-mogged', papoi:'sfx-papoi', byebye:'sfx-byebye'
+};
+
+function sfx(name){
+  const el = document.getElementById(SFX_IDS[name]);
+  if(!el) return;
+  try{ el.currentTime = 0; el.play().catch(()=>{}); }catch(e){}
+}
+
+function toggleMute(){
+  audioMuted = !audioMuted;
+  document.querySelectorAll('audio').forEach(a=>a.muted = audioMuted);
+  document.querySelectorAll('.mute-btn').forEach(b=>b.innerText = audioMuted ? '🔇' : '🔊');
+}
+
+function startBgMusic(){
+  const m = document.getElementById('bg-music');
+  if(!m) return;
+  m.muted = audioMuted;
+  m.volume = 0.4;
+  m.currentTime = 0;
+  m.play().catch(()=>{});
+}
+function stopBgMusic(){
+  const m = document.getElementById('bg-music');
+  if(m) m.pause();
+}
+
+/* ================= NAVEGACIÓN DE PANTALLAS (menu / reglas) ================= */
+function showScreen(id){
+  sfx('click');
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
+  document.getElementById(id).classList.add('show');
+}
+
+/* ================= CONFIG ================= */
+const AURA_MAX = 400, AURA_GOAL = 500, XP_GOAL = 300, TURN_SECONDS = 15, DRAW_COST = 20;
+
+const cardTemplates = [
+  { title:"PAPOI",   cost:0,  auraGain:35, damage:0,  effect:"none",    desc:"Humilde. +35 Aura.", copies:6 },
+  { title:"SIX",     cost:25, auraGain:0,  damage:45, effect:"combo6",  desc:"Ataque rápido. -45 Aura al rival.", copies:5 },
+  { title:"SEVEN",   cost:35, auraGain:0,  damage:70, effect:"combo7",  desc:"Golpe serio. -70 Aura al rival.", copies:4 },
+  { title:"MEWING",  cost:0,  auraGain:80, damage:0,  effect:"none",    desc:"Silencio total. +80 Aura.", copies:6 },
+  { title:"MOGGED",  cost:120,auraGain:30, damage:180,effect:"steal",   desc:"ULTRA: -180 Aura al rival, +40 Aura propia.", copies:2 },
+  { title:"AURA FARMING", cost:15, auraGain:90, damage:0, effect:"none", desc:"Emanás aura pura. +90 Aura.", copies:4 },
+  { title:"ANULO MUFA",cost:20,auraGain:0, damage:0,  effect:"heal",    desc:"Recuperás 90 de Aura.", copies:4 },
+  { title:"BYE BYE", cost:40, auraGain:0,  damage:30, effect:"discard", desc:"Rival descarta 1 carta.", copies:4 }
+];
+
+/* ================= STATE ================= */
+let G = null;                // estado del juego (compartido)
+let mode = 'local';          // 'local' | 'online'
+let myIndex = null;          // 0 = P1, 1 = P2 (en online)
+let isHost = false;
+let peer = null, conn = null;
+let tickTimer = null;
+let lastPlayed = { 0:null, 1:null };
+let aiThinking = false;
+let lastRenderedEventTs = 0;
+
+/* ================= DECK ================= */
+function buildSharedDeck(){
+  let d = [];
+  cardTemplates.forEach(t=>{
+    for(let i=0;i<t.copies;i++){
+      const {copies, ...card} = t;
+      d.push({...card});
+    }
+  });
+  for(let i=d.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [d[i],d[j]] = [d[j],d[i]];
+  }
+  return d;
+}
+
+function initGameState(){
+  G = {
+    turn: 0,
+    over: false,
+    turnStartedAt: Date.now(),
+    lastEvent: null,
+    deck: buildSharedDeck(),
+    players: [
+      { aura:60, auraFarmed:60, xp:0, hand:[] },
+      { aura:60, auraFarmed:60, xp:0, hand:[] }
+    ]
+  };
+  lastRenderedEventTs = 0;
+  for(let i=0;i<5;i++){
+    if(G.deck.length) G.players[0].hand.push(G.deck.pop());
+    if(G.deck.length) G.players[1].hand.push(G.deck.pop());
+  }
+}
+
+/* ================= GAME LOGIC (autoridad) ================= */
+function gainAura(p, amount){
+  if(amount<=0) return;
+  p.aura = Math.min(AURA_MAX, p.aura + amount);
+  p.auraFarmed += amount;
+}
+
+function playCard(pIdx, cIdx){
+  const p = G.players[pIdx], rival = G.players[pIdx===0?1:0];
+  const card = p.hand[cIdx];
+  if(!card || p.aura < card.cost) return;
+
+  p.aura -= card.cost;
+  gainAura(p, card.auraGain);
+  rival.aura = Math.max(0, rival.aura - card.damage);
+
+  let xpGain = Math.round(card.damage/4 + card.auraGain/3);
+
+  if(card.title==="MOGGED"){
+    gainAura(p, 40);
+    xpGain += 40;
+    showAnnounce("BYE BYE!!!");
+  }
+  if(card.effect==="heal") gainAura(p, 90);
+  if(card.effect==="discard" && rival.hand.length>0) rival.hand.splice(0,1);
+
+  p.xp += xpGain;
+
+  if(card.effect==="combo7" && lastPlayed[pIdx]==="combo6") triggerSixSeven();
+  lastPlayed[pIdx] = card.effect==="combo6" ? "combo6" : (card.effect==="combo7" ? "combo7" : null);
+
+  p.hand.splice(cIdx,1);
+  G.lastEvent = { ts:Date.now(), by:pIdx, title:card.title, effect:card.effect, damage:card.damage };
+  checkGameOver();
+  if(!G.over) endTurn();
+}
+
+function drawCard(pIdx){
+  const p = G.players[pIdx];
+  if(G.deck.length===0) return;
+  if(p.aura < DRAW_COST || p.hand.length>=8) return;
+  p.aura -= DRAW_COST;
+  p.hand.push(G.deck.pop());
+  endTurn();
+}
+
+function passTurn(){ endTurn(); }
+
+function endTurn(){
+  G.turn = G.turn===0 ? 1 : 0;
+  gainAura(G.players[G.turn], 18);
+  G.turnStartedAt = Date.now();
+}
+
+/* Envuelve una mutación de autoridad: renderiza y, si soy host online, transmite el estado */
+function authAct(fn){
+  fn();
+  render();
+  if(mode==='online' && isHost) broadcastState();
+}
+
+/* ================= ACCIONES DEL JUGADOR (routing local/online) ================= */
+function requestPlay(pIdx, cIdx){
+  if(!G || G.over) return;
+  if(mode==='local'){
+    if(G.turn!==pIdx) return;
+    authAct(()=>playCard(pIdx,cIdx));
+    return;
+  }
+  if(pIdx!==myIndex || G.turn!==myIndex) return;
+  if(mode==='solo' || isHost) authAct(()=>playCard(myIndex,cIdx));
+  else conn.send({type:'action', action:{kind:'play', cardIdx:cIdx}});
+}
+
+function requestDraw(){
+  if(!G || G.over) return;
+  sfx('draw');
+  if(mode==='local'){ authAct(()=>drawCard(G.turn)); return; }
+  if(G.turn!==myIndex) return;
+  if(mode==='solo' || isHost) authAct(()=>drawCard(myIndex));
+  else conn.send({type:'action', action:{kind:'draw'}});
+}
+
+function requestPass(){
+  if(!G || G.over) return;
+  sfx('pass');
+  if(mode==='local'){ authAct(()=>passTurn()); return; }
+  if(G.turn!==myIndex) return;
+  if(mode==='solo' || isHost) authAct(()=>passTurn());
+  else conn.send({type:'action', action:{kind:'pass'}});
+}
+
+/* ================= RENDER ================= */
+function cardUI(card,pIdx,cIdx){
+  const div=document.createElement('div');
+  const visible = mode==='local' ? (G.turn===pIdx) : (pIdx===myIndex);
+  if(!visible){ div.className='card-back'; return div; }
+
+  div.className=`card ${pIdx===0?'p1-card':'p2-card'}`;
+  if(card.title==="MOGGED") div.classList.add('special-style');
+  if(G.players[pIdx].aura < card.cost || G.turn!==pIdx) div.classList.add('unaffordable');
+
+  div.innerHTML=`
+    <div class="card-title">${card.title}</div>
+    <div class="card-effect">${card.desc}</div>
+    <div class="card-cost">⚡${card.cost}</div>`;
+  div.onclick=()=>requestPlay(pIdx,cIdx);
+  return div;
+}
+
+function render(){
+  if(!G) return;
+
+  /* En online, "mi" mano siempre va abajo (sin rotar) y la del rival arriba (rotada),
+     sin importar si internamente soy el jugador 0 o el 1. Antes esto estaba fijo
+     por índice, por eso a P2 se le veía todo dado vuelta como en modo local. */
+  const bIdx = mode==='online' ? myIndex : 0;   // índice del jugador que va ABAJO
+  const tIdx = mode==='online' ? (myIndex===0?1:0) : 1; // índice del jugador que va ARRIBA
+
+  const p1h=document.getElementById('p1-hand'), p2h=document.getElementById('p2-hand');
+  p1h.innerHTML=''; p2h.innerHTML='';
+  G.players[bIdx].hand.forEach((c,i)=>p1h.appendChild(cardUI(c,bIdx,i)));
+  G.players[tIdx].hand.forEach((c,i)=>p2h.appendChild(cardUI(c,tIdx,i)));
+
+  [[1,bIdx],[2,tIdx]].forEach(([slot,idx])=>{
+    const p = G.players[idx];
+    document.getElementById(`p${slot}-hp-val`).innerText = Math.max(0,p.aura);
+    const auraFrac = Math.max(0,p.aura)/AURA_MAX;
+    const hpChip = document.getElementById(`p${slot}-hp-chip`);
+    hpChip.classList.remove('st-high','st-mid','st-low');
+    hpChip.classList.add(auraFrac>=0.5 ? 'st-high' : (auraFrac>=0.2 ? 'st-mid' : 'st-low'));
+    document.getElementById(`p${slot}-farm-bar`).style.width = Math.min(p.auraFarmed/AURA_GOAL*100,100)+'%';
+    document.getElementById(`p${slot}-farm-val`).innerText = `${Math.min(p.auraFarmed,AURA_GOAL)}/${AURA_GOAL} AURA ACUM.`;
+    document.getElementById(`p${slot}-xp-bar`).style.width = Math.min(p.xp/XP_GOAL*100,100)+'%';
+    document.getElementById(`p${slot}-xp-val`).innerText = `${p.xp}/${XP_GOAL} XP`;
+    document.getElementById(`p${slot}-aura-val`).innerText = p.aura;
+  });
+
+  const bottomLabel = mode==='online' ? 'VOS' : 'P1';
+  const topLabel = mode==='online' ? 'RIVAL' : (mode==='solo' ? 'IA' : 'P2');
+  document.getElementById('p1-hp-label').innerText = bottomLabel;
+  document.getElementById('p2-hp-label').innerText = topLabel;
+  document.getElementById('p1-orb-label').innerText = bottomLabel;
+  document.getElementById('p2-orb-label').innerText = topLabel;
+
+  document.getElementById('deck-count').innerText = G.deck.length;
+
+  if(G.lastEvent && G.lastEvent.ts !== lastRenderedEventTs){
+    lastRenderedEventTs = G.lastEvent.ts;
+    playCardFx(G.lastEvent);
+  }
+
+  const t=document.getElementById('turn-display');
+  if(mode==='online'){
+    t.innerText = G.turn===myIndex ? "¡TU TURNO!" : "TURNO DEL RIVAL";
+  } else if(mode==='solo'){
+    t.innerText = G.turn===myIndex ? "¡TU TURNO!" : "PENSANDO LA IA...";
+  } else {
+    t.innerText = G.turn===0 ? "TURNO: JUGADOR 1" : "TURNO: JUGADOR 2";
+  }
+  t.style.color = G.turn===bIdx ? 'var(--p1)' : 'var(--p2)';
+
+  checkGameOver();
+  aiMaybeAct();
+}
+
+/* ================= IA (modo solo) ================= */
+function aiMaybeAct(){
+  if(mode!=='solo' || !G || G.over || G.turn!==1 || aiThinking) return;
+  aiThinking = true;
+  setTimeout(()=>{
+    aiThinking = false;
+    if(!G || G.over || G.turn!==1) return;
+    aiAct();
+  }, 700 + Math.random()*600);
+}
+
+function aiAct(){
+  const ai = G.players[1];
+  let playable = ai.hand.map((c,i)=>({...c, idx:i})).filter(c=>ai.aura >= c.cost);
+
+  if(playable.length>0){
+    if(ai.aura < 150){
+      const heal = playable.find(c=>c.effect==='heal');
+      if(heal){ authAct(()=>playCard(1, heal.idx)); return; }
+    }
+    playable.sort((a,b)=> (b.damage+(b.title==='MOGGED'?60:0)) - (a.damage+(a.title==='MOGGED'?60:0)) );
+    authAct(()=>playCard(1, playable[0].idx));
+  } else if(ai.aura>=DRAW_COST && ai.hand.length<8 && G.deck.length>0){
+    authAct(()=>drawCard(1));
+  } else {
+    authAct(()=>passTurn());
+  }
+}
+
+function checkGameOver(){
+  if(!G || G.over) return;
+  let winner=null, reason='', draw=false;
+  if(G.players[0].aura<=0 && G.players[1].aura<=0){ draw=true; reason='DOBLE K.O. DE AURA'; }
+  else if(G.players[0].aura<=0){ winner=1; reason='K.O. DE AURA'; }
+  else if(G.players[1].aura<=0){ winner=0; reason='K.O. DE AURA'; }
+  else if(G.players[0].auraFarmed>=AURA_GOAL && G.players[1].auraFarmed>=AURA_GOAL){ draw=true; reason='EMPATE DE AURA ACUMULADA'; }
+  else if(G.players[0].auraFarmed>=AURA_GOAL){ winner=0; reason='META DE AURA ACUMULADA'; }
+  else if(G.players[1].auraFarmed>=AURA_GOAL){ winner=1; reason='META DE AURA ACUMULADA'; }
+  else if(G.players[0].xp>=XP_GOAL && G.players[1].xp>=XP_GOAL){ draw=true; reason='EMPATE DE XP'; }
+  else if(G.players[0].xp>=XP_GOAL){ winner=0; reason='LÍMITE DE XP'; }
+  else if(G.players[1].xp>=XP_GOAL){ winner=1; reason='LÍMITE DE XP'; }
+  else if(G.players[0].hand.length===0 && G.players[1].hand.length===0){ draw=true; reason='LOS DOS SE QUEDARON SIN CARTAS'; }
+  else if(G.players[0].hand.length===0){ winner=1; reason='RIVAL SE QUEDÓ SIN CARTAS'; }
+  else if(G.players[1].hand.length===0){ winner=0; reason='RIVAL SE QUEDÓ SIN CARTAS'; }
+
+  if(draw){
+    G.over=true;
+    stopTickLoop();
+    stopBgMusic();
+    sfx('draw-game');
+    showAnnounce('EMPATE');
+    setTimeout(()=>{ alert(`¡EMPATE! (${reason})`); location.reload(); },1000);
+  } else if(winner!==null){
+    G.over=true;
+    stopTickLoop();
+    stopBgMusic();
+    const iWon = mode==='online' ? winner===myIndex : (mode==='solo' ? winner===0 : true);
+    sfx(iWon ? 'win' : 'lose');
+    showAnnounce('MOGGEADO');
+    setTimeout(()=>{ alert(`¡JUGADOR ${winner+1} GANA! (${reason})`); location.reload(); },1000);
+  }
+}
+
+/* ================= TIMER (15s por turno) ================= */
+function updateTimerUI(remaining){
+  const el=document.getElementById('timer-num');
+  el.innerText = Math.ceil(remaining);
+  el.classList.toggle('low', remaining<=5);
+}
+
+function tick(){
+  if(!G || G.over) return;
+  const remaining = TURN_SECONDS - (Date.now()-G.turnStartedAt)/1000;
+  updateTimerUI(Math.max(0,remaining));
+  if(mode==='local' || mode==='solo' || (mode==='online' && isHost)){
+    if(remaining<=0) authAct(()=>passTurn());
+  }
+}
+function startTickLoop(){ stopTickLoop(); tickTimer=setInterval(tick,250); }
+function stopTickLoop(){ if(tickTimer) clearInterval(tickTimer); tickTimer=null; }
+
+/* ================= SOLO (VS IA) ================= */
+function startSolo(){
+  sfx('click');
+  mode='solo'; myIndex=0; isHost=true;
+  initGameState();
+  document.getElementById('menu').classList.remove('show');
+  document.getElementById('game').style.display='flex';
+  render();
+  startTickLoop();
+  startBgMusic();
+  bindChat();
+}
+
+/* ================= LOCAL ================= */
+function startLocal(){
+  sfx('click');
+  mode='local'; myIndex=null; isHost=false;
+  initGameState();
+  document.getElementById('menu').classList.remove('show');
+  document.getElementById('game').style.display='flex';
+  render();
+  startTickLoop();
+  startBgMusic();
+  bindChat();
+}
+
+/* ================= ONLINE (PeerJS, salas P2P) ================= */
+function genCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c='';
+  for(let i=0;i<4;i++) c+=chars[Math.floor(Math.random()*chars.length)];
+  return c;
+}
+
+function showPanel(which){
+  sfx('click');
+  document.getElementById('host-panel').style.display = which==='host' ? 'block':'none';
+  document.getElementById('join-panel').style.display = which==='join' ? 'block':'none';
+  if(which==='host') hostRoom();
+}
+
+const ROOM_PREFIX = 'aurabattle-';
+let hostRetries = 0;
+
+function hostRoom(){
+  mode='online'; isHost=true; myIndex=0;
+  if(peer && !peer.destroyed) peer.destroy();
+  const code=genCode();
+  document.getElementById('host-status').innerText='generando sala...';
+  peer = new Peer(ROOM_PREFIX+code);
+  peer.on('open', ()=>{
+    hostRetries = 0;
+    document.getElementById('room-code-display').innerText=code;
+    document.getElementById('host-status').innerText='esperando a que se una tu rival...';
+  });
+  peer.on('connection', c=>{
+    conn=c;
+    conn.on('open', ()=>{
+      document.getElementById('host-status').innerText='¡Rival conectado! Iniciando partida...';
+      initGameState();
+      conn.send({type:'init', state:G});
+      enterGameScreen();
+      render();
+      startTickLoop();
+      startBgMusic();
+      bindChat();
+    });
+    conn.on('data', handleHostData);
+    conn.on('close', ()=>{ alert('El rival se desconectó.'); location.reload(); });
+  });
+  peer.on('error', e=>{
+    if(e.type==='unavailable-id'){
+      hostRetries++;
+      if(hostRetries<8){
+        document.getElementById('host-status').innerText=`código ocupado, probando otro... (${hostRetries})`;
+        setTimeout(hostRoom, 300);
+      } else {
+        document.getElementById('host-status').innerText='No se pudo generar la sala. Probá de nuevo en unos segundos.';
+      }
+    } else {
+      document.getElementById('host-status').innerText='Error: '+e.type+' — revisá tu conexión a internet.';
+    }
+  });
+}
+
+function handleHostData(data){
+  if(data.type!=='action') return;
+  if(G.turn!==1) return;
+  const a=data.action;
+  if(a.kind==='play') authAct(()=>playCard(1,a.cardIdx));
+  else if(a.kind==='draw') authAct(()=>drawCard(1));
+  else if(a.kind==='pass') authAct(()=>passTurn());
+}
+
+let joinRetries = 0;
+
+function joinRoom(){
+  sfx('click');
+  const code=document.getElementById('join-code-input').value.trim().toUpperCase();
+  if(code.length<4){ document.getElementById('join-status').innerText='Ingresá el código de 4 caracteres.'; return; }
+  mode='online'; isHost=false; myIndex=1;
+  joinRetries = 0;
+  document.getElementById('join-status').innerText='conectando...';
+  if(peer && !peer.destroyed) peer.destroy();
+  peer = new Peer();
+  peer.on('open', ()=>attemptJoin(code));
+  peer.on('error', e=>{
+    if(e.type==='peer-unavailable' && joinRetries<3){
+      joinRetries++;
+      document.getElementById('join-status').innerText=`sala no encontrada, reintentando... (${joinRetries})`;
+      setTimeout(()=>attemptJoin(code), 1000);
+    } else if(e.type==='peer-unavailable'){
+      document.getElementById('join-status').innerText='No se encontró la sala. Confirmá que tu amigo la tenga abierta y el código sea correcto.';
+    } else {
+      document.getElementById('join-status').innerText='Error: '+e.type+' — revisá tu conexión.';
+    }
+  });
+}
+
+function attemptJoin(code){
+  conn = peer.connect(ROOM_PREFIX+code);
+  conn.on('open', ()=>{
+    joinRetries = 0;
+    document.getElementById('join-status').innerText='conectado, esperando al host...';
+  });
+  conn.on('data', handleGuestData);
+  conn.on('close', ()=>{ alert('El host se desconectó.'); location.reload(); });
+}
+
+function handleGuestData(data){
+  if(data.type==='init' || data.type==='state'){
+    G = data.state;
+    if(document.getElementById('game').style.display!=='flex'){
+      enterGameScreen();
+      startTickLoop();
+      startBgMusic();
+      bindChat();
+    }
+    render();
+  }
+}
+
+function enterGameScreen(){
+  document.getElementById('menu').classList.remove('show');
+  document.getElementById('game').style.display='flex';
+}
+
+function broadcastState(){
+  if(conn && conn.open) conn.send({type:'state', state:G});
+}
+
+/* ================= CHAT / SIXSEVEN EASTER EGG ================= */
+function bindChat(){
+  const input=document.getElementById('chat-input');
+  input.onkeydown = e=>{ if(e.key==='Enter') sendChat(); };
+}
+function sendChat(){
+  const input=document.getElementById('chat-input');
+  const val=input.value.trim().toLowerCase().replace(/[\s\-_]/g,'');
+  if(val==="sixseven" || val==="67") triggerSixSeven();
+  input.value='';
+}
+function triggerSixSeven(){
+  sfx('sixseven');
+  document.getElementById('sixseven-overlay').classList.add('show');
+  const stick = document.querySelector('.stickman');
+  const danceClasses = ['anim-bounce','anim-spin','anim-shake','anim-tilt','anim-wobble'];
+  stick.classList.remove(...danceClasses);
+  const pick = danceClasses[Math.floor(Math.random()*danceClasses.length)];
+  void stick.offsetWidth; // reinicia la animación aunque se repita la misma clase
+  stick.classList.add(pick);
+
+  const speed = (0.3 + Math.random()*0.35).toFixed(2)+'s';
+  document.querySelectorAll('.arm-l,.arm-r,.head').forEach(el=>{
+    el.style.animationDuration = speed;
+  });
+}
+document.getElementById('sixseven-close').onclick = ()=>{
+  document.getElementById('sixseven-overlay').classList.remove('show');
+};
+
+/* ================= FX DE JUGADA DE CARTA ================= */
+/* Baile en loop característico de cada carta (además del "pop" de entrada) */
+const MEME_MOTION = {
+  "PAPOI": "meme-tilt",
+  "SIX": "meme-shake",
+  "SEVEN": "meme-shake",
+  "MEWING": null,
+  "MOGGED": "meme-bounce",
+  "AURA FARMING": "meme-bounce",
+  "ANULO MUFA": "meme-wobble",
+  "BYE BYE": "meme-tilt"
+};
+
+const DEFAULT_FX_SVG = `<svg viewBox="0 0 240 280">
+    <circle class="head" cx="120" cy="55" r="20" fill="none" stroke="currentColor" stroke-width="4"/>
+    <line x1="120" y1="75" x2="120" y2="165" stroke="currentColor" stroke-width="4"/>
+    <g class="arm-l"><line x1="120" y1="92" x2="65" y2="92" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></g>
+    <g class="arm-r"><line x1="120" y1="92" x2="175" y2="92" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></g>
+    <line x1="120" y1="165" x2="92" y2="240" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+    <line x1="120" y1="165" x2="148" y2="240" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+  </svg>`;
+
+const danceClasses = ['anim-bounce','anim-spin','anim-shake','anim-tilt','anim-wobble'];
+
+/* Cada carta tiene su propia "pose" tipo meme de TikTok, dibujada a mano en SVG */
+const CARD_POSES = {
+  "PAPOI": { label:"PAPOI 🙏", svg:`<svg viewBox="0 0 240 280"><g fill="none" stroke="currentColor">
+      <g transform="rotate(16 120 130)">
+        <circle cx="120" cy="55" r="20" stroke-width="4"/>
+        <line x1="120" y1="75" x2="120" y2="165" stroke-width="4"/>
+        <line x1="120" y1="92" x2="88" y2="150" stroke-width="5" stroke-linecap="round"/>
+        <line x1="120" y1="92" x2="152" y2="150" stroke-width="5" stroke-linecap="round"/>
+      </g>
+      <line x1="120" y1="165" x2="95" y2="240" stroke-width="4" stroke-linecap="round"/>
+      <line x1="120" y1="165" x2="145" y2="240" stroke-width="4" stroke-linecap="round"/>
+    </g></svg>` },
+  "SIX": { label:"SIX!", svg:`<svg viewBox="0 0 240 280"><g fill="none" stroke="currentColor">
+      <circle cx="120" cy="55" r="20" stroke-width="4"/>
+      <line x1="120" y1="75" x2="120" y2="165" stroke-width="4"/>
+      <line x1="120" y1="90" x2="60" y2="70" stroke-width="5" stroke-linecap="round"/>
+      <g class="jab-arm"><line x1="120" y1="90" x2="205" y2="90" stroke-width="6" stroke-linecap="round"/></g>
+      <line x1="120" y1="165" x2="95" y2="240" stroke-width="4" stroke-linecap="round"/>
+      <line x1="120" y1="165" x2="145" y2="240" stroke-width="4" stroke-linecap="round"/>
+    </g></svg>` },
+  "SEVEN": { label:"SEVEN!!", svg:`<svg viewBox="0 0 240 280"><g fill="none" stroke="currentColor">
+      <circle cx="120" cy="55" r="20" stroke-width="4"/>
+      <line x1="120" y1="75" x2="120" y2="165" stroke-width="4"/>
+      <line x1="120" y1="90" x2="55" y2="25" stroke-width="5" stroke-linecap="round"/>
+      <line x1="120" y1="90" x2="185" y2="25" stroke-width="5" stroke-linecap="round"/>
+      <line x1="120" y1="165" x2="78" y2="248" stroke-width="4" stroke-linecap="round"/>
+      <line x1="120" y1="165" x2="162" y2="248" stroke-width="4" stroke-linecap="round"/>
+    </g></svg>` },
+  "MEWING": { label:"MEWING", svg:`<svg viewBox="0 0 240 280"><g fill="none" stroke="currentColor">
+      <circle cx="120" cy="52" r="20" stroke-width="4"/>
+      <path class="jaw" d="M102,66 L120,90 L138,66" stroke-width="3"/>
+      <line x1="120" y1="75" x2="120" y2="165" stroke-width="4"/>
+      <line x1="120" y1="92" x2="92" y2="138" stroke-width="5" stroke-linecap="round"/>
+      <g class="jaw-touch-arm"><line x1="120" y1="92" x2="138" y2="66" stroke-width="5" stroke-linecap="round"/></g>
+      <line x1="120" y1="165" x2="95" y2="240" stroke-width="4" stroke-linecap="round"/>
+      <line x1="120" y1="165" x2="145" y2="240" stroke-width="4" stroke-linecap="round"/>
+    </g></svg>` },
+  "MOGGED": { label:"MOGGEADO 💀", svg:`<svg viewBox="0 0 240 280"><g class="flex-body" fill="none" stroke="currentColor">
+      <circle cx="120" cy="55" r="20" stroke-width="4"/>
+      <line x1="120" y1="75" x2="120" y2="165" stroke-width="4"/>
+      <path d="M120,92 L72,92 L72,52" stroke-width="6" stroke-linecap="round"/>
+      <path d="M120,92 L168,92 L168,52" stroke-width="6" stroke-linecap="round"/>
+      <line x1="120" y1="165" x2="72" y2="248" stroke-width="4" stroke-linecap="round"/>
+      <line x1="120" y1="165" x2="168" y2="248" stroke-width="4" stroke-linecap="round"/>
+    </g></svg>` },
+  "AURA FARMING": { label:"AURA ON ✨", svg:`<svg viewBox="0 0 240 280"><g fill="none" stroke="currentColor">
+      <circle class="aura-ring" cx="120" cy="55" r="42" stroke-width="2" opacity=".6"/>
+      <circle cx="120" cy="55" r="20" stroke-width="4"/>
+      <line x1="120" y1="75" x2="120" y2="165" stroke-width="4"/>
+      <line x1="120" y1="90" x2="58" y2="35" stroke-width="5" stroke-linecap="round"/>
+      <line x1="120" y1="90" x2="182" y2="35" stroke-width="5" stroke-linecap="round"/>
+      <line x1="120" y1="165" x2="95" y2="240" stroke-width="4" stroke-linecap="round"/>
+      <line x1="120" y1="165" x2="145" y2="240" stroke-width="4" stroke-linecap="round"/>
+      <g class="aura-rays">
+        <line x1="120" y1="8" x2="120" y2="-14" stroke-width="4" stroke-linecap="round"/>
+        <line x1="68" y1="26" x2="50" y2="8" stroke-width="4" stroke-linecap="round"/>
+        <line x1="172" y1="26" x2="190" y2="8" stroke-width="4" stroke-linecap="round"/>
+      </g>
+    </g></svg>` },
+  "ANULO MUFA": { label:"+AURA 💚", svg:`<svg viewBox="0 0 240 280"><g fill="none" stroke="currentColor">
+      <circle cx="120" cy="55" r="20" stroke-width="4"/>
+      <line x1="120" y1="75" x2="120" y2="165" stroke-width="4"/>
+      <path class="heart-pulse" d="M120,100 L96,80 L120,58 L144,80 Z" stroke-width="3"/>
+      <line x1="120" y1="165" x2="95" y2="240" stroke-width="4" stroke-linecap="round"/>
+      <line x1="120" y1="165" x2="145" y2="240" stroke-width="4" stroke-linecap="round"/>
+    </g></svg>` },
+  "BYE BYE": { label:"bye bye 👋", svg:`<svg viewBox="0 0 240 280"><g fill="none" stroke="currentColor">
+      <circle cx="120" cy="55" r="20" stroke-width="4"/>
+      <line x1="120" y1="75" x2="120" y2="165" stroke-width="4"/>
+      <line x1="120" y1="92" x2="90" y2="140" stroke-width="5" stroke-linecap="round"/>
+      <g class="wave-arm"><line x1="120" y1="92" x2="188" y2="55" stroke-width="5" stroke-linecap="round"/></g>
+      <line x1="120" y1="165" x2="95" y2="240" stroke-width="4" stroke-linecap="round"/>
+      <line x1="120" y1="165" x2="145" y2="240" stroke-width="4" stroke-linecap="round"/>
+    </g></svg>` }
+};
+
+function sfxForEvent(evt){
+  if(evt.title==="MOGGED") sfx('mogged');
+  else if(evt.title==="PAPOI") sfx('papoi');
+  else if(evt.title==="BYE BYE") sfx('byebye');
+  else if(evt.effect==="heal") sfx('heal');
+  else if(evt.effect==="combo6" || evt.effect==="combo7") sfx('combo');
+  else if(evt.damage>0) sfx('damage');
+  else sfx('card');
+}
+
+function playCardFx(evt){
+  sfxForEvent(evt);
+  const fx = document.getElementById('play-fx');
+  fx.classList.remove('show', 'pose-pop', 'meme-bounce','meme-shake','meme-tilt','meme-wobble', ...danceClasses);
+  fx.style.color = evt.by===0 ? 'var(--p1)' : 'var(--p2)';
+
+  const pose = CARD_POSES[evt.title];
+  if(pose){
+    fx.innerHTML = pose.svg + `<div class="fx-label"></div>`;
+    fx.querySelector('.fx-label').innerText = pose.label;
+    void fx.offsetWidth;
+    const motion = MEME_MOTION.hasOwnProperty(evt.title) ? MEME_MOTION[evt.title] : 'meme-wobble';
+    fx.classList.add('show', 'pose-pop');
+    if(motion) fx.classList.add(motion);
+  } else {
+    fx.innerHTML = DEFAULT_FX_SVG + `<div class="fx-label"></div>`;
+    fx.querySelector('.fx-label').innerText = evt.effect==='heal' ? '+AURA' : (evt.damage>0 ? `-${evt.damage} AURA` : evt.title);
+    void fx.offsetWidth;
+    const pick = danceClasses[Math.floor(Math.random()*danceClasses.length)];
+    fx.classList.add('show', pick);
+  }
+  setTimeout(()=>fx.classList.remove('show'), 1400);
+}
+
+function showAnnounce(txt){
+  const a=document.getElementById('announcer');
+  a.innerText=txt; a.style.opacity='1';
+  setTimeout(()=>a.style.opacity='0',1500);
+}
+
+/* ================= REGLAS: lista de cartas generada desde cardTemplates ================= */
+function renderRulesCards(){
+  const el = document.getElementById('rules-cards');
+  if(!el) return;
+  el.innerHTML = cardTemplates.map(c=>`
+    <div class="rule-card-row">
+      <span class="rc-title">${c.title}</span>
+      <span class="rc-desc">${c.desc}</span>
+      <span class="rc-cost">⚡${c.cost}</span>
+    </div>`).join('');
+}
+renderRulesCards();
+</script>
+</body>
+</html>
